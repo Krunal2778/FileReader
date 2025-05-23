@@ -1,5 +1,5 @@
-import { apiRequest } from "./queryClient";
 import { API_BASE_URL, AUTH_TOKEN_KEY } from "./constants";
+import * as api from './api';
 
 interface AuthResponse {
   user: {
@@ -17,9 +17,13 @@ interface AuthResponse {
 
 // Login user
 export async function loginUser(email: string, password: string): Promise<AuthResponse> {
-  const response = await apiRequest("POST", "/auth/login", { email, password });
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.login(email, password);
+    return data.data || data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
 }
 
 // Register user
@@ -32,26 +36,36 @@ export async function registerUser(userData: {
   phone?: string;
   visibility?: string;
 }): Promise<AuthResponse> {
-  const response = await apiRequest("POST", "/auth/register", userData);
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.register(userData);
+    return data.data || data;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
+  }
 }
 
 // Get current user
 export async function getCurrentUser() {
-  const response = await apiRequest("GET", "/auth/me");
-  const data = await response.json();
-  return data.data.user;
+  try {
+    const data = await api.getCurrentUser();
+    // Handle both response formats: data.data.user or data.user
+    return data.data?.user || data.user || data;
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    throw error;
+  }
 }
 
 // Change password
 export async function changePassword(currentPassword: string, newPassword: string) {
-  const response = await apiRequest("POST", "/auth/change-password", {
-    currentPassword,
-    newPassword
-  });
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.changePassword(currentPassword, newPassword);
+    return data.data || data;
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw error;
+  }
 }
 
 // Update user profile
@@ -61,16 +75,24 @@ export async function updateUserProfile(userData: {
   visibility?: string;
   profileImage?: string;
 }) {
-  const response = await apiRequest("PATCH", "/users/profile", userData);
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.updateUserProfile(userData);
+    return data.data || data;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    throw error;
+  }
 }
 
 // Get user preferences
 export async function getUserPreferences() {
-  const response = await apiRequest("GET", "/users/preferences");
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.getUserPreferences();
+    return data.data || data;
+  } catch (error) {
+    console.error("Error getting preferences:", error);
+    throw error;
+  }
 }
 
 // Update user preferences
@@ -78,9 +100,13 @@ export async function updateUserPreferences(preferences: {
   selectedCategories?: string[];
   notificationPreferences?: Record<string, boolean>;
 }) {
-  const response = await apiRequest("PATCH", "/users/preferences", preferences);
-  const data = await response.json();
-  return data.data;
+  try {
+    const data = await api.updateUserPreferences(preferences);
+    return data.data || data;
+  } catch (error) {
+    console.error("Error updating preferences:", error);
+    throw error;
+  }
 }
 
 // Google OAuth login URL

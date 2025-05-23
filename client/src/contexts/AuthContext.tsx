@@ -37,11 +37,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const token = localStorage.getItem(AUTH_TOKEN_KEY);
         if (token) {
-          const userData = await getCurrentUser();
-          setUser(userData);
+          try {
+            const userData = await getCurrentUser();
+            setUser(userData);
+          } catch (error) {
+            console.error("Failed to get current user:", error);
+            // Token is invalid or expired
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+          }
         }
       } catch (error) {
-        // Token is invalid or expired
+        console.error("Auth check error:", error);
         localStorage.removeItem(AUTH_TOKEN_KEY);
       } finally {
         setIsLoading(false);

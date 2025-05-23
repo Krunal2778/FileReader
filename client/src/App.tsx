@@ -35,7 +35,7 @@ function Router() {
         if (token) {
           localStorage.setItem('auth_token', token);
           setLocation('/');
-          return null;
+          return <div>Authenticating...</div>;
         }
         
         return <NotFound />;
