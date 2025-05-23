@@ -1,7 +1,7 @@
 import { apiRequest } from "./queryClient";
-import { API_ENDPOINTS } from "./constants";
+import { API_BASE_URL, AUTH_TOKEN_KEY } from "./constants";
 
-export interface AuthResponse {
+interface AuthResponse {
   user: {
     id: number;
     uuid: string;
@@ -15,103 +15,80 @@ export interface AuthResponse {
   token: string;
 }
 
+// Login user
 export async function loginUser(email: string, password: string): Promise<AuthResponse> {
-  try {
-    const response = await apiRequest("POST", API_ENDPOINTS.LOGIN, { email, password });
-    const data = await response.json();
-    
-    if (data.status !== "success" || !data.data) {
-      throw new Error(data.message || "Login failed");
-    }
-    
-    return data.data;
-  } catch (error: any) {
-    console.error("Login error:", error);
-    throw error;
-  }
+  const response = await apiRequest("POST", "/auth/login", { email, password });
+  const data = await response.json();
+  return data.data;
 }
 
-export async function registerUser(userData: any): Promise<AuthResponse> {
-  try {
-    const response = await apiRequest("POST", API_ENDPOINTS.REGISTER, userData);
-    const data = await response.json();
-    
-    if (data.status !== "success" || !data.data) {
-      throw new Error(data.message || "Registration failed");
-    }
-    
-    return data.data;
-  } catch (error: any) {
-    console.error("Registration error:", error);
-    throw error;
-  }
+// Register user
+export async function registerUser(userData: {
+  username: string;
+  email: string;
+  password: string;
+  name: string;
+  location: string;
+  phone?: string;
+  visibility?: string;
+}): Promise<AuthResponse> {
+  const response = await apiRequest("POST", "/auth/register", userData);
+  const data = await response.json();
+  return data.data;
 }
 
+// Get current user
 export async function getCurrentUser() {
-  try {
-    const token = localStorage.getItem("auth_token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-    
-    const response = await fetch(API_ENDPOINTS.CURRENT_USER, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      credentials: "include"
-    });
-    
-    if (!response.ok) {
-      throw new Error("Failed to get current user");
-    }
-    
-    const data = await response.json();
-    
-    if (data.status !== "success" || !data.data) {
-      throw new Error(data.message || "Failed to get user data");
-    }
-    
-    return data.data.user;
-  } catch (error: any) {
-    console.error("Get current user error:", error);
-    throw error;
-  }
+  const response = await apiRequest("GET", "/auth/me");
+  const data = await response.json();
+  return data.data.user;
 }
 
-export async function updateUserProfile(userData: any) {
-  try {
-    const response = await apiRequest("PATCH", API_ENDPOINTS.UPDATE_PROFILE, userData);
-    const data = await response.json();
-    
-    if (data.status !== "success" || !data.data) {
-      throw new Error(data.message || "Update profile failed");
-    }
-    
-    return data.data;
-  } catch (error: any) {
-    console.error("Update profile error:", error);
-    throw error;
-  }
+// Change password
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const response = await apiRequest("POST", "/auth/change-password", {
+    currentPassword,
+    newPassword
+  });
+  const data = await response.json();
+  return data.data;
 }
 
-export async function changePassword(passwords: {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
+// Update user profile
+export async function updateUserProfile(userData: {
+  name?: string;
+  phone?: string;
+  visibility?: string;
+  profileImage?: string;
 }) {
-  try {
-    const response = await apiRequest("POST", API_ENDPOINTS.CHANGE_PASSWORD, passwords);
-    const data = await response.json();
-    
-    if (data.status !== "success") {
-      throw new Error(data.message || "Password change failed");
-    }
-    
-    return data;
-  } catch (error: any) {
-    console.error("Change password error:", error);
-    throw error;
-  }
+  const response = await apiRequest("PATCH", "/users/profile", userData);
+  const data = await response.json();
+  return data.data;
+}
+
+// Get user preferences
+export async function getUserPreferences() {
+  const response = await apiRequest("GET", "/users/preferences");
+  const data = await response.json();
+  return data.data;
+}
+
+// Update user preferences
+export async function updateUserPreferences(preferences: {
+  selectedCategories?: string[];
+  notificationPreferences?: Record<string, boolean>;
+}) {
+  const response = await apiRequest("PATCH", "/users/preferences", preferences);
+  const data = await response.json();
+  return data.data;
+}
+
+// Google OAuth login URL
+export function getGoogleLoginUrl() {
+  return `${API_BASE_URL}/auth/google`;
+}
+
+// Apple OAuth login URL
+export function getAppleLoginUrl() {
+  return `${API_BASE_URL}/auth/apple`;
 }

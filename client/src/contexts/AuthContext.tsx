@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { loginUser, registerUser, getCurrentUser } from "@/lib/auth";
 import { queryClient } from "@/lib/queryClient";
+import { AUTH_TOKEN_KEY } from "@/lib/constants";
 
 interface User {
   id: number;
@@ -25,9 +25,9 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,14 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("auth_token");
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
         if (token) {
           const userData = await getCurrentUser();
           setUser(userData);
         }
       } catch (error) {
         // Token is invalid or expired
-        localStorage.removeItem("auth_token");
+        localStorage.removeItem(AUTH_TOKEN_KEY);
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const { user, token } = await loginUser(email, password);
-      localStorage.setItem("auth_token", token);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
       setUser(user);
     } catch (error: any) {
       console.error("Login error:", error);
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("auth_token");
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(null);
     // Clear all queries from the cache
     queryClient.clear();
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: any) => {
     try {
       const { user, token } = await registerUser(data);
-      localStorage.setItem("auth_token", token);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
       setUser(user);
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -100,12 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+};
